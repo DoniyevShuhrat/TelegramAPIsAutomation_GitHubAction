@@ -1,0 +1,44 @@
+name: Run Postman Collection Every 5 min
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+
+jobs:
+  run-postman-collection:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Install Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+
+    - name: Install Newman
+      run: npm install -g newman
+
+    - name: Display Environment File # <---- This is the new step
+      run: cat postman/TelegramAPIsEnvironment.postman_environment.json
+
+    - name: Check API Accessibility  # This is the new step to check API accessibility
+      run: |
+        curl -v -X POST https://core.oson.uz:8443/api/user/login \
+        -H "Content-Type: application/x-www-form-urlencoded" \
+        -d "phone=998906384606" \
+        -d "password=UBLoJ8EqewzvNma" \
+        -d "dev_id=1234567890aaaaaa" \
+        -d "device_name=MyDevice" \
+        -d "app_version=4.0.9" \
+        -d "platform=android"
+
+    - name: Run Postman Collection
+      run: |
+        newman run postman/TelegramAPIs.postman_collection.json \
+        -e postman/TelegramAPIsEnvironment.postman_environment.json \
+        --reporters cli,junit \
+        --reporter-junit-export newman-results.xml
+
